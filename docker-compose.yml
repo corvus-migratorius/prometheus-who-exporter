@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  exporter:
+    build:
+      context: ./exporter
+      dockerfile: dockerfile
+    container_name: exporter_container
+    restart: unless-stopped
+    ports:
+      - "${OUT_PORT}:${IN_PORT}"  
+    volumes:
+      - ./exporter:/exporter
+    environment:
+      - OUT_PORT=${OUT_PORT}
+      - IN_PORT=${IN_PORT}
+    command: [ "-p $IN_PORT" ] 
+
