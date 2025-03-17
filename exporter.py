@@ -1,13 +1,16 @@
+import sys
 import argparse
 import logging
 import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from prometheus_client import Gauge, generate_latest, REGISTRY
+from prometheus_client import Gauge, generate_latest,CollectorRegistry 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",filename="exporter.log")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",stream=sys.stderr)
 
-who_up = Gauge("who_up", "Status of the exporter (1 - up, 0 - down)")
-who_active = Gauge("who_active", "Number of active sessions per user", ["username"])
+collector=CollectorRegistry()
+
+who_up = Gauge("who_up", "Status of the exporter",registry=collector)
+who_active = Gauge("who_active", "Number of active sessions per user", ["username"],registry=collector)
 
 
 def get_active_sessions():
@@ -32,7 +35,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/metrics":
             try:
-                who_up.labels().set(1) 
+                who_up.set(1) 
 
                 active_sessions = get_active_sessions()
                 for username, count in active_sessions.items():
@@ -41,7 +44,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-type", "text/plain")
                 self.end_headers()
-                self.wfile.write(generate_latest(REGISTRY))
+                self.wfile.write(generate_latest(collector))
             except Exception as e:
                 logging.error(f"Error generating metrics: {e}")
                 self.send_error(500, "Internal Server Error")
