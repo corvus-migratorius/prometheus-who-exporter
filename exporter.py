@@ -1,43 +1,74 @@
-#!/usr/bin/env python3
-
+import argparse
+import logging
 import subprocess
-import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from prometheus_client import Gauge, generate_latest, REGISTRY
 
-who_up = 0  # exporter status 1 - working, 0 - dead
-who_active = {}  # users active sessions
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",filename="exporter.log")
 
-def parse_who_output(output):
-    """
-    "who -u" output parsing  
-    """
-    active_sessions = {}
-    for line in output.splitlines():
-        rows = line.split()
-        username = rows[0]
-        idle_time = rows[3]
-        if idle_time == '.':
-            active_sessions[username] = active_sessions.get(username, 0) + 1
-    return active_sessions
+who_up = Gauge("who_up", "Status of the exporter (1 - up, 0 - down)")
+who_active = Gauge("who_active", "Number of active sessions per user", ["username"])
 
-def update_metrics():
-    """
-    Update metrics function
-    """
-    global who_up, who_active
+
+def get_active_sessions():
     try:
-        result = subprocess.run(['who', '-u'], capture_output=True, text=True)
-        if result.returncode == 0:
-            who_up = 1
-            
-            who_active = parse_who_output(result.stdout)
-        else:
-            who_up = 0
+        result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True)
+        if result.returncode != 0:
+            logging.error(f"Failed to run 'who': {result.stderr}")
+            return {}
+
+        sessions = {}
+        for line in result.stdout.splitlines():
+            username = line.split()[0]
+            sessions[username] = sessions.get(username, 0) + 1
+
+        return sessions
     except Exception as e:
-        print(f"Error: {e}")
-        who_up = 0
+        logging.error(f"Error getting active sessions: {e}")
+        return {}
 
-if __name__ == '__main__':
-    while True:
-        update_metrics()
-        time.sleep(5) 
 
+class MetricsHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/metrics":
+            try:
+                who_up.labels().set(1) 
+
+                active_sessions = get_active_sessions()
+                for username, count in active_sessions.items():
+                    who_active.labels(username=username).set(count)
+
+                self.send_response(200)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(generate_latest(REGISTRY))
+            except Exception as e:
+                logging.error(f"Error generating metrics: {e}")
+                self.send_error(500, "Internal Server Error")
+        else:
+            self.send_error(404, "Not Found")
+
+
+def run_exporter(port):
+    server_address = ("", port)
+    httpd = HTTPServer(server_address, MetricsHandler)
+    logging.info(f"Starting exporter on port {port}...")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        logging.info("Stopping exporter...")
+    finally:
+        httpd.server_close()
+        logging.info("Exporter stopped.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Prometheus exporter for active user sessions.")
+    parser.add_argument("-p", "--port", type=int, default=8000, help="Port to expose metrics on (default: 8000)")
+    args = parser.parse_args()
+
+    run_exporter(args.port)
+    
+
+if __name__ == "__main__":
+    main()
