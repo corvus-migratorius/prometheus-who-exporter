@@ -10,14 +10,14 @@ import argparse
 import logging
 import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from prometheus_client import Gauge, generate_latest,CollectorRegistry 
+from prometheus_client import Gauge, generate_latest, CollectorRegistry
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",stream=sys.stderr)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", stream=sys.stderr)
 
-collector=CollectorRegistry()
+collector = CollectorRegistry()
 
-who_up = Gauge("who_up", "Status of the exporter",registry=collector)
-who_active = Gauge("who_active", "Number of active sessions per user", ["username"],registry=collector)
+who_up = Gauge("who_up", "Status of the exporter", registry=collector)
+who_active = Gauge("who_active", "Number of active sessions per user", ["username"], registry=collector)
 
 
 def get_active_sessions():
@@ -25,7 +25,7 @@ def get_active_sessions():
     Scrape user sessions from /var/run/utmp via `who`.
 
     :return: Dictionary of session counts per user
-    """    
+    """
     try:
         result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True)
         if result.returncode != 0:
@@ -53,7 +53,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
         """
         if self.path == "/metrics":
             try:
-                who_up.set(1) 
+                who_up.set(1)
 
                 active_sessions = get_active_sessions()
                 for username, count in active_sessions.items():
@@ -95,7 +95,7 @@ def main():
     args = parser.parse_args()
 
     run_exporter(args.port)
-    
+
 
 if __name__ == "__main__":
     main()
