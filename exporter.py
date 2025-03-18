@@ -5,12 +5,15 @@
 Python exporter for active user sessions scraped from the `who` CLI output
 """
 
-import sys
 import argparse
 import logging
 import subprocess
+import sys
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
 from prometheus_client import Gauge, generate_latest, CollectorRegistry
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", stream=sys.stderr)
 
