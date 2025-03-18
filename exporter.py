@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
+
+"""
+Python exporter for active user sessions scraped from the `who` CLI output
+"""
+
 import sys
 import argparse
 import logging
@@ -16,6 +21,11 @@ who_active = Gauge("who_active", "Number of active sessions per user", ["usernam
 
 
 def get_active_sessions():
+    """
+    Scrape user sessions from /var/run/utmp via `who`.
+
+    :return: Dictionary of session counts per user
+    """    
     try:
         result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True)
         if result.returncode != 0:
@@ -34,7 +44,13 @@ def get_active_sessions():
 
 
 class MetricsHandler(BaseHTTPRequestHandler):
+    """
+    HTTP handler for Prometheus metrics.
+    """
     def do_GET(self):
+        """
+        Handle HTTP GET requests.
+        """
         if self.path == "/metrics":
             try:
                 who_up.set(1) 
@@ -55,6 +71,9 @@ class MetricsHandler(BaseHTTPRequestHandler):
 
 
 def run_exporter(port):
+    """
+    Run a Prometheus exporter on the specified port.
+    """
     server_address = ("", port)
     httpd = HTTPServer(server_address, MetricsHandler)
     logging.info(f"Starting exporter on port {port}...")
@@ -68,6 +87,9 @@ def run_exporter(port):
 
 
 def main():
+    """
+    Parse command-line arguments and start the Prometheus exporter.
+    """
     parser = argparse.ArgumentParser(description="Prometheus exporter for active user sessions.")
     parser.add_argument("-p", "--port", type=int, default=8000, help="Port to expose metrics on (default: 8000)")
     args = parser.parse_args()
