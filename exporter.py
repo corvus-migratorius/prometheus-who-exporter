@@ -23,7 +23,7 @@ who_up = Gauge("who_up", "Status of the exporter", registry=collector)
 who_active = Gauge("who_active", "Number of active sessions per user", ["username"], registry=collector)
 
 
-def get_active_sessions():
+def get_active_sessions() -> dict[str, int]:
     """
     Scrape user sessions from /var/run/utmp via `who`.
 
@@ -35,7 +35,7 @@ def get_active_sessions():
             logging.error("Failed to run `who`: '%s'", result.stderr)
             return {}
 
-        sessions = {}
+        sessions: dict[str, int] = {}
         for line in result.stdout.splitlines():
             username = line.split()[0]
             sessions[username] = sessions.get(username, 0) + 1
@@ -50,7 +50,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
     """
     HTTP handler for Prometheus metrics.
     """
-    def do_GET(self):  # pylint: disable=invalid-name
+    def do_GET(self) -> None:  # pylint: disable=invalid-name
         """
         Handle HTTP GET requests.
         """
@@ -73,7 +73,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
 
-def run_exporter(port):
+def run_exporter(port: int) -> None:
     """
     Run a Prometheus exporter on the specified port.
     """
@@ -89,7 +89,7 @@ def run_exporter(port):
         logging.info("Exporter stopped.")
 
 
-def main():
+def main() -> None:
     """
     Parse command-line arguments and start the Prometheus exporter.
     """
