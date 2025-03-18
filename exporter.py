@@ -32,7 +32,7 @@ def get_active_sessions():
     try:
         result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True)
         if result.returncode != 0:
-            logging.error(f"Failed to run 'who': {result.stderr}")
+            logging.error("Failed to run `who`: '%s'", result.stderr)
             return {}
 
         sessions = {}
@@ -42,7 +42,7 @@ def get_active_sessions():
 
         return sessions
     except Exception as e:
-        logging.error(f"Error getting active sessions: {e}")
+        logging.error("Error getting active sessions: %s", e)
         return {}
 
 
@@ -67,7 +67,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(generate_latest(collector))
             except Exception as e:
-                logging.error(f"Error generating metrics: {e}")
+                logging.error("Error generating metrics: %s", e)
                 self.send_error(500, "Internal Server Error")
         else:
             self.send_error(404, "Not Found")
@@ -79,7 +79,7 @@ def run_exporter(port):
     """
     server_address = ("", port)
     httpd = HTTPServer(server_address, MetricsHandler)
-    logging.info(f"Starting exporter on port {port}...")
+    logging.info("Starting exporter on port %s...", port)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
