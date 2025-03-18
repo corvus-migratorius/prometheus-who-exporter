@@ -66,7 +66,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-type", "text/plain")
                 self.end_headers()
                 self.wfile.write(generate_latest(collector))
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logging.error("Error generating metrics: %s", e)
                 self.send_error(500, "Internal Server Error")
         else:
