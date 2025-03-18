@@ -50,7 +50,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
     """
     HTTP handler for Prometheus metrics.
     """
-    def do_GET(self):
+    def do_GET(self):  # pylint: disable=invalid-name
         """
         Handle HTTP GET requests.
         """
