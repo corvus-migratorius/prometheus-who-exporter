@@ -68,9 +68,9 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 self.wfile.write(generate_latest(collector))
             except Exception as e:  # pylint: disable=broad-except
                 logging.error("Error generating metrics: %s", e)
-                self.send_error(500, "Internal Server Error")
+                self.send_error(500)
         else:
-            self.send_error(404, "Not Found")
+            self.send_error(404)
 
 
 def run_exporter(port):
