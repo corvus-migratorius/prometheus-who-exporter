@@ -30,7 +30,7 @@ def get_active_sessions():
     :return: Dictionary of session counts per user
     """
     try:
-        result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True)
+        result = subprocess.run(["who", "-u", "/var/run/utmp"], capture_output=True, text=True, check=False)
         if result.returncode != 0:
             logging.error("Failed to run `who`: '%s'", result.stderr)
             return {}
