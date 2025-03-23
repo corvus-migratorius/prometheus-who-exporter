@@ -11,6 +11,7 @@ services:
       - "${OUT_PORT}:${IN_PORT}"  
     volumes:
       - ./exporter:/exporter
+      - /var/run/utmp:/var/run/utmp
     environment:
       - OUT_PORT=${OUT_PORT}
       - IN_PORT=${IN_PORT}
