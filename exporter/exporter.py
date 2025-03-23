@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-<<<<<<< HEAD:exporter.py
 # -*- encoding: utf-8 -*-
 
 """
 Python exporter for active user sessions scraped from the `who` CLI output
 """
 
-=======
-
 import sys
->>>>>>> compose:exporter/exporter.py
 import argparse
 import logging
 import subprocess
